@@ -59,7 +59,7 @@ const ProductSelect = ({
               <SelectValue placeholder="Select a product" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">No Product Selected</SelectItem>
+              <SelectItem value="none">No Product Selected</SelectItem>
               {products.map((product) => (
                 <SelectItem key={product.id} value={product.id}>
                   {product.name}
