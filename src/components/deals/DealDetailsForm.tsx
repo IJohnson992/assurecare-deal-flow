@@ -28,6 +28,16 @@ const requiresDetailedFinancials = (stage: DealStage): boolean => {
   return ['Contract Negotiation', 'Closed Won', 'Closed Lost'].includes(stage);
 };
 
+// Calculate duration in months between two dates
+const calculateDurationMonths = (startDate: Date, endDate: Date): number => {
+  const startYear = startDate.getFullYear();
+  const endYear = endDate.getFullYear();
+  const startMonth = startDate.getMonth();
+  const endMonth = endDate.getMonth();
+  
+  return (endYear - startYear) * 12 + (endMonth - startMonth);
+};
+
 const DealDetailsForm = ({ deal }: DealDetailsFormProps) => {
   const { updateDeal } = useDeal();
   const { toast } = useToast();
@@ -95,9 +105,11 @@ const DealDetailsForm = ({ deal }: DealDetailsFormProps) => {
     
     // Only include implementation timeline if both dates are set
     if (startDate && endDate) {
+      const durationMonths = calculateDurationMonths(startDate, endDate);
       updates.implementationTimeline = {
         startDate,
         goLiveDate: endDate,
+        durationMonths: Math.max(1, durationMonths) // Ensure minimum 1 month duration
       };
     }
     
