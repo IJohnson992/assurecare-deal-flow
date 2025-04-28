@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,7 +62,29 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
-				}
+				},
+        // AssureCare CRM specific colors
+        brand: {
+          50: '#f0f4ff',
+          100: '#d9e2ff',
+          200: '#b9c9ff',
+          300: '#8ba4ff',
+          400: '#5c73fc',
+          500: '#354bf5',
+          600: '#2431e9',
+          700: '#1e23d0',
+          800: '#1d24a9',
+          900: '#1e2284',
+        },
+        stage: {
+          lead: '#9b87f5',
+          discovery: '#6e9aff',
+          rfp: '#4fb7ff',
+          demo: '#26d1ff',
+          negotiation: '#0ea5e9',
+          closedwon: '#10b981',
+          closedlost: '#f43f5e',
+        }
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
