@@ -21,7 +21,7 @@ const Index = () => {
     // Get user's own deals first, then other deals, sorted by recency
     return deals
       .filter(deal => 
-        deal.stage !== 'Closed Won' && deal.stage !== 'Closed Lost'
+        deal.isActive // Only show active deals
       )
       .sort((a, b) => {
         // First sort by owner
@@ -63,9 +63,16 @@ const Index = () => {
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {recentDeals.map(deal => (
-                  <DealCard key={deal.id} deal={deal} />
-                ))}
+                {recentDeals.length > 0 ? (
+                  recentDeals.map(deal => (
+                    <DealCard key={deal.id} deal={deal} />
+                  ))
+                ) : (
+                  <div className="col-span-full text-center py-12">
+                    <h3 className="text-lg font-medium">No active deals</h3>
+                    <p className="text-muted-foreground mt-1">Add a new deal to get started</p>
+                  </div>
+                )}
               </div>
             </div>
           </>

@@ -49,9 +49,16 @@ export interface Task {
   reminderSent: boolean;
 }
 
+export interface Product {
+  id: string;
+  name: string;
+  description?: string;
+}
+
 export interface ImplementationTimeline {
   startDate: Date;
   goLiveDate: Date;
+  durationMonths: number; // Adding duration in months
 }
 
 export type ChangeType = 
@@ -61,7 +68,9 @@ export type ChangeType =
   | 'arr_updated'
   | 'arr_year1_updated'
   | 'implementation_revenue_updated'
-  | 'timeline_updated';
+  | 'timeline_updated'
+  | 'product_added'
+  | 'owner_changed';
 
 export interface DealChange {
   id: string;
@@ -77,7 +86,7 @@ export interface Deal {
   id: string;
   clientName: string;
   clientType: ClientType;
-  dealValue: number;
+  dealValue: number; // SaaS Contract Value
   annualRecurringRevenue?: number;
   arrYear1?: number;
   implementationRevenue?: number;
@@ -92,6 +101,9 @@ export interface Deal {
   tasks: Task[];
   createdAt: Date;
   updatedAt: Date;
+  product?: Product;
+  expectedCloseDate?: Date;
+  isActive?: boolean;
 }
 
 export interface Contact {
@@ -113,3 +125,14 @@ export interface PipelineMetrics {
   dealsByStage: Record<DealStage, number>;
   valueByStage: Record<DealStage, number>;
 }
+
+// Stage probability mapping
+export const stageProbability: Record<DealStage, number> = {
+  'Lead Identified': 10,
+  'Discovery Call': 25,
+  'RFP/RFI Submitted': 40,
+  'Demo Presented': 60,
+  'Contract Negotiation': 80,
+  'Closed Won': 100,
+  'Closed Lost': 0
+};

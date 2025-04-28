@@ -1,3 +1,4 @@
+
 import { 
   User, 
   Deal, 
@@ -7,7 +8,9 @@ import {
   Contact, 
   Note, 
   Task,
-  DealChange
+  DealChange,
+  Product,
+  stageProbability
 } from '@/types';
 
 // Mock Users
@@ -33,6 +36,30 @@ export const mockUsers: User[] = [
     role: 'salesperson',
     avatar: 'https://i.pravatar.cc/150?img=3',
   },
+];
+
+// Mock Products
+export const mockProducts: Product[] = [
+  {
+    id: 'product-1',
+    name: 'Care Management Platform',
+    description: 'End-to-end care management solution for health plans and providers'
+  },
+  {
+    id: 'product-2',
+    name: 'Population Health Analytics',
+    description: 'Advanced analytics for population health management'
+  },
+  {
+    id: 'product-3',
+    name: 'Patient Engagement Suite',
+    description: 'Tools to improve patient engagement and satisfaction'
+  },
+  {
+    id: 'product-4',
+    name: 'Revenue Cycle Management',
+    description: 'Streamline billing and improve financial performance'
+  }
 ];
 
 // Helper function to create dates in the past
@@ -289,12 +316,16 @@ export const mockDeals: Deal[] = [
     tasks: mockTasks.filter(t => t.dealId === 'deal-1'),
     createdAt: daysAgo(30),
     updatedAt: daysAgo(15),
+    product: mockProducts[0],
+    expectedCloseDate: daysAgo(-45), // 45 days in the future
+    isActive: true,
   },
   {
     id: 'deal-2',
     clientName: 'Western Medical Group',
     clientType: 'Medicare' as ClientType,
     dealValue: 180000,
+    annualRecurringRevenue: 60000,
     leadSource: 'LinkedIn' as LeadSource,
     stage: 'Demo Presented' as DealStage,
     stageHistory: [
@@ -310,12 +341,16 @@ export const mockDeals: Deal[] = [
     tasks: mockTasks.filter(t => t.dealId === 'deal-2'),
     createdAt: daysAgo(45),
     updatedAt: daysAgo(7),
+    product: mockProducts[1],
+    expectedCloseDate: daysAgo(-30), // 30 days in the future
+    isActive: true,
   },
   {
     id: 'deal-3',
     clientName: 'State Health Department',
     clientType: 'Medicaid' as ClientType,
     dealValue: 420000,
+    annualRecurringRevenue: 140000,
     leadSource: 'Event' as LeadSource,
     stage: 'RFP/RFI Submitted' as DealStage,
     stageHistory: [
@@ -330,12 +365,16 @@ export const mockDeals: Deal[] = [
     tasks: mockTasks.filter(t => t.dealId === 'deal-3'),
     createdAt: daysAgo(60),
     updatedAt: daysAgo(5),
+    product: mockProducts[2],
+    expectedCloseDate: daysAgo(-60), // 60 days in the future
+    isActive: true,
   },
   {
     id: 'deal-4',
     clientName: 'Community Care Group',
     clientType: 'Commercial' as ClientType,
     dealValue: 320000,
+    annualRecurringRevenue: 120000,
     leadSource: 'Website' as LeadSource,
     stage: 'Contract Negotiation' as DealStage,
     stageHistory: [
@@ -352,12 +391,16 @@ export const mockDeals: Deal[] = [
     tasks: mockTasks.filter(t => t.dealId === 'deal-4'),
     createdAt: daysAgo(90),
     updatedAt: daysAgo(20),
+    product: mockProducts[3],
+    expectedCloseDate: daysAgo(-15), // 15 days in the future
+    isActive: true,
   },
   {
     id: 'deal-5',
     clientName: 'National Healthcare Alliance',
     clientType: 'Medicare' as ClientType,
     dealValue: 575000,
+    annualRecurringRevenue: 230000,
     leadSource: 'Direct' as LeadSource,
     stage: 'Closed Won' as DealStage,
     stageHistory: [
@@ -375,12 +418,16 @@ export const mockDeals: Deal[] = [
     tasks: [],
     createdAt: daysAgo(120),
     updatedAt: daysAgo(15),
+    product: mockProducts[0],
+    expectedCloseDate: daysAgo(15), // 15 days in the past (already closed)
+    isActive: false,
   },
   {
     id: 'deal-6',
     clientName: 'Regional Hospital Network',
     clientType: 'Commercial' as ClientType,
     dealValue: 225000,
+    annualRecurringRevenue: 75000,
     leadSource: 'Event' as LeadSource,
     stage: 'Closed Lost' as DealStage,
     stageHistory: [
@@ -397,5 +444,8 @@ export const mockDeals: Deal[] = [
     tasks: [],
     createdAt: daysAgo(75),
     updatedAt: daysAgo(10),
+    product: mockProducts[2],
+    expectedCloseDate: daysAgo(10), // 10 days in the past (already closed)
+    isActive: false,
   },
 ];

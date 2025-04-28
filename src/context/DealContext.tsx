@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Deal, DealStage, Note, Task, Contact, DealChange, ChangeType } from '@/types';
-import { mockDeals } from '@/data/mockData';
+import { Deal, DealStage, Note, Task, Contact, DealChange, ChangeType, Product } from '@/types';
+import { mockDeals, mockProducts } from '@/data/mockData';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from './AuthContext';
 
@@ -9,6 +9,7 @@ interface DealContextProps {
   deals: Deal[];
   isLoading: boolean;
   dealChanges: DealChange[];
+  products: Product[];
   addDeal: (deal: Omit<Deal, 'id' | 'createdAt' | 'updatedAt' | 'stageHistory' | 'changes'>) => void;
   updateDeal: (dealId: string, updates: Partial<Deal>) => void;
   updateDealStage: (dealId: string, newStage: DealStage) => void;
@@ -21,12 +22,15 @@ interface DealContextProps {
   updateContact: (contactId: string, updates: Partial<Contact>) => void;
   deleteContact: (contactId: string) => void;
   getChangesByDateRange: (startDate: Date, endDate: Date) => DealChange[];
+  addProduct: (product: Omit<Product, 'id'>) => Product;
+  getProductById: (productId: string) => Product | undefined;
 }
 
 const DealContext = createContext<DealContextProps>({
   deals: [],
   isLoading: true,
   dealChanges: [],
+  products: [],
   addDeal: () => {},
   updateDeal: () => {},
   updateDealStage: () => {},
@@ -39,6 +43,8 @@ const DealContext = createContext<DealContextProps>({
   updateContact: () => {},
   deleteContact: () => {},
   getChangesByDateRange: () => [],
+  addProduct: () => ({ id: '', name: '' }),
+  getProductById: () => undefined,
 });
 
 export const useDeal = () => useContext(DealContext);
@@ -46,13 +52,13 @@ export const useDeal = () => useContext(DealContext);
 export const DealProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [deals, setDeals] = useState<Deal[]>([]);
   const [dealChanges, setDealChanges] = useState<DealChange[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   const { currentUser } = useAuth();
 
-  // Load deals from mock data
+  // Load deals and products from mock data
   useEffect(() => {
-    // In a real app, this would be an API call
     // Initialize deals with empty changes array if not present
     const dealsWithChanges = mockDeals.map(deal => ({
       ...deal,
@@ -61,12 +67,16 @@ export const DealProvider: React.FC<{ children: React.ReactNode }> = ({ children
       arrYear1: deal.arrYear1 || undefined,
       implementationRevenue: deal.implementationRevenue || undefined,
       implementationTimeline: deal.implementationTimeline || undefined,
+      isActive: deal.isActive !== undefined ? deal.isActive : true,
     }));
     setDeals(dealsWithChanges);
     
     // Extract all changes for the changes feed
     const allChanges = dealsWithChanges.flatMap(deal => deal.changes || []);
     setDealChanges(allChanges);
+    
+    // Load products
+    setProducts(mockProducts || []);
     
     setIsLoading(false);
   }, []);
@@ -102,6 +112,28 @@ export const DealProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setDealChanges(prev => [...prev, change]);
     
     return change;
+  };
+
+  // Add a new product
+  const addProduct = (productData: Omit<Product, 'id'>): Product => {
+    const newProduct: Product = {
+      ...productData,
+      id: `product-${Date.now()}`,
+    };
+    
+    setProducts(prev => [...prev, newProduct]);
+    
+    toast({
+      title: "Product Added",
+      description: `${newProduct.name} has been added to your products.`,
+    });
+    
+    return newProduct;
+  };
+
+  // Get a product by ID
+  const getProductById = (productId: string): Product | undefined => {
+    return products.find(product => product.id === productId);
   };
 
   // Add a new deal
@@ -180,6 +212,26 @@ export const DealProvider: React.FC<{ children: React.ReactNode }> = ({ children
       );
     }
 
+    if (updates.ownerId !== undefined &&
+        updates.ownerId !== dealToUpdate.ownerId) {
+      recordChange(
+        dealId,
+        'owner_changed',
+        dealToUpdate.ownerId,
+        updates.ownerId
+      );
+    }
+
+    if (updates.product !== undefined && 
+        (dealToUpdate.product?.id !== updates.product?.id)) {
+      recordChange(
+        dealId,
+        'product_added',
+        dealToUpdate.product,
+        updates.product
+      );
+    }
+
     setDeals(prev => 
       prev.map(deal => 
         deal.id === dealId 
@@ -213,13 +265,35 @@ export const DealProvider: React.FC<{ children: React.ReactNode }> = ({ children
           );
           
           // If moving to "Closed Won" or "Closed Lost"
-          if (newStage === 'Closed Won' || newStage === 'Closed Lost') {
+          if ((newStage === 'Closed Won' || newStage === 'Closed Lost') && 
+             !(deal.stage === 'Closed Won' || deal.stage === 'Closed Lost')) {
             recordChange(
               dealId,
               'deal_closed',
               deal.stage,
               newStage
             );
+            
+            // Also update isActive status
+            return {
+              ...deal,
+              stage: newStage,
+              stageHistory: [...deal.stageHistory, { stage: newStage, timestamp: now }],
+              updatedAt: now,
+              isActive: false
+            };
+          }
+          
+          // If moving from closed to non-closed
+          if ((deal.stage === 'Closed Won' || deal.stage === 'Closed Lost') &&
+             !(newStage === 'Closed Won' || newStage === 'Closed Lost')) {
+            return {
+              ...deal,
+              stage: newStage,
+              stageHistory: [...deal.stageHistory, { stage: newStage, timestamp: now }],
+              updatedAt: now,
+              isActive: true
+            };
           }
           
           return {
@@ -415,6 +489,7 @@ export const DealProvider: React.FC<{ children: React.ReactNode }> = ({ children
     deals,
     isLoading,
     dealChanges,
+    products,
     addDeal,
     updateDeal,
     updateDealStage,
@@ -427,6 +502,8 @@ export const DealProvider: React.FC<{ children: React.ReactNode }> = ({ children
     updateContact,
     deleteContact,
     getChangesByDateRange,
+    addProduct,
+    getProductById,
   };
 
   return <DealContext.Provider value={value}>{children}</DealContext.Provider>;

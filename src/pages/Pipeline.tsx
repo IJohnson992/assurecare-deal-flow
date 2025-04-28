@@ -13,6 +13,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { ClientType, Deal, DealStage } from '@/types';
 import { Search } from 'lucide-react';
 
@@ -25,6 +27,7 @@ const Pipeline = () => {
   const [clientTypeFilter, setClientTypeFilter] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [sort, setSort] = useState<string>("recent");
+  const [showActiveOnly, setShowActiveOnly] = useState<boolean>(true);
   
   // Filter and sort deals
   const filteredDeals = useMemo(() => {
@@ -33,6 +36,9 @@ const Pipeline = () => {
     // Start with basic filters
     return deals
       .filter(deal => {
+        // Active deals filter
+        if (showActiveOnly && !deal.isActive) return false;
+        
         // Stage filter
         if (stageFilter !== "all" && deal.stage !== stageFilter) return false;
         
@@ -56,7 +62,7 @@ const Pipeline = () => {
         // Default: recent (by updated date)
         return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
       });
-  }, [deals, stageFilter, clientTypeFilter, searchTerm, sort]);
+  }, [deals, stageFilter, clientTypeFilter, searchTerm, sort, showActiveOnly]);
 
   // Get unique stages for filter
   const stages: DealStage[] = [
@@ -103,7 +109,16 @@ const Pipeline = () => {
         </div>
         
         <div className="flex flex-col sm:flex-row gap-3 justify-between">
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap gap-3 items-center">
+            <div className="flex items-center space-x-2">
+              <Switch 
+                id="active-deals"
+                checked={showActiveOnly}
+                onCheckedChange={setShowActiveOnly}
+              />
+              <Label htmlFor="active-deals">Active Deals Only</Label>
+            </div>
+            
             <Select value={stageFilter} onValueChange={setStageFilter}>
               <SelectTrigger className="w-[160px]">
                 <SelectValue placeholder="Filter by stage" />
