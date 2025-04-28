@@ -124,7 +124,9 @@ const PipelineChart = ({ deals }: PipelineChartProps) => {
                 radius={[4, 4, 0, 0]} 
                 barSize={35}
                 fill="#8884d8"
-                dataKeyCircle="fillColor"
+                name="Value"
+                // Remove dataKeyCircle and use fill prop from data
+                fill={(data) => data.fillColor}
               />
             </BarChart>
           </ResponsiveContainer>
