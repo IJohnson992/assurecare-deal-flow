@@ -29,7 +29,8 @@ import {
   CalendarIcon, 
   ClockIcon, 
   PlusIcon, 
-  TrashIcon
+  TrashIcon,
+  DollarSign
 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
@@ -37,6 +38,7 @@ import { Label } from '@/components/ui/label';
 import DealTaskList from './DealTaskList';
 import DealNoteList from './DealNoteList';
 import DealContactList from './DealContactList';
+import DealDetailsForm from './DealDetailsForm';
 
 interface DealModalProps {
   deal: Deal;
@@ -133,8 +135,9 @@ const DealModal = ({ deal, open, onOpenChange }: DealModalProps) => {
         <DealStageProgress deal={deal} />
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-4">
-          <TabsList className="grid grid-cols-4 mb-4">
+          <TabsList className="grid grid-cols-5 mb-4">
             <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="financials">Financials</TabsTrigger>
             <TabsTrigger value="notes">Notes</TabsTrigger>
             <TabsTrigger value="tasks">Tasks</TabsTrigger>
             <TabsTrigger value="contacts">Contacts</TabsTrigger>
@@ -167,6 +170,18 @@ const DealModal = ({ deal, open, onOpenChange }: DealModalProps) => {
                     <span className="text-muted-foreground">Created</span>
                     <span className="font-medium">{format(new Date(deal.createdAt), 'MMM d, yyyy')}</span>
                   </div>
+                  {deal.annualRecurringRevenue ? (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">ARR</span>
+                      <span className="font-medium">${formatCurrency(deal.annualRecurringRevenue)}</span>
+                    </div>
+                  ) : null}
+                  {deal.implementationRevenue ? (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Implementation</span>
+                      <span className="font-medium">${formatCurrency(deal.implementationRevenue)}</span>
+                    </div>
+                  ) : null}
                 </CardContent>
               </Card>
               
@@ -209,6 +224,20 @@ const DealModal = ({ deal, open, onOpenChange }: DealModalProps) => {
                 </CardContent>
               </Card>
             </div>
+          </TabsContent>
+          
+          <TabsContent value="financials">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Financial Details</CardTitle>
+                <CardDescription>
+                  Enter revenue and timeline information
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <DealDetailsForm deal={deal} />
+              </CardContent>
+            </Card>
           </TabsContent>
           
           <TabsContent value="notes">

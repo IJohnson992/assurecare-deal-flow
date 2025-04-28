@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Deal, DealStage, Note, Task, Contact } from '@/types';
+import { Deal, DealStage, Note, Task, Contact, DealChange, ChangeType } from '@/types';
 import { mockDeals } from '@/data/mockData';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from './AuthContext';
@@ -8,7 +8,8 @@ import { useAuth } from './AuthContext';
 interface DealContextProps {
   deals: Deal[];
   isLoading: boolean;
-  addDeal: (deal: Omit<Deal, 'id' | 'createdAt' | 'updatedAt' | 'stageHistory'>) => void;
+  dealChanges: DealChange[];
+  addDeal: (deal: Omit<Deal, 'id' | 'createdAt' | 'updatedAt' | 'stageHistory' | 'changes'>) => void;
   updateDeal: (dealId: string, updates: Partial<Deal>) => void;
   updateDealStage: (dealId: string, newStage: DealStage) => void;
   deleteDeal: (dealId: string) => void;
@@ -19,11 +20,13 @@ interface DealContextProps {
   addContact: (contact: Omit<Contact, 'id'>) => void;
   updateContact: (contactId: string, updates: Partial<Contact>) => void;
   deleteContact: (contactId: string) => void;
+  getChangesByDateRange: (startDate: Date, endDate: Date) => DealChange[];
 }
 
 const DealContext = createContext<DealContextProps>({
   deals: [],
   isLoading: true,
+  dealChanges: [],
   addDeal: () => {},
   updateDeal: () => {},
   updateDealStage: () => {},
@@ -35,12 +38,14 @@ const DealContext = createContext<DealContextProps>({
   addContact: () => {},
   updateContact: () => {},
   deleteContact: () => {},
+  getChangesByDateRange: () => [],
 });
 
 export const useDeal = () => useContext(DealContext);
 
 export const DealProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [deals, setDeals] = useState<Deal[]>([]);
+  const [dealChanges, setDealChanges] = useState<DealChange[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   const { currentUser } = useAuth();
@@ -48,12 +53,59 @@ export const DealProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Load deals from mock data
   useEffect(() => {
     // In a real app, this would be an API call
-    setDeals(mockDeals);
+    // Initialize deals with empty changes array if not present
+    const dealsWithChanges = mockDeals.map(deal => ({
+      ...deal,
+      changes: deal.changes || [],
+      annualRecurringRevenue: deal.annualRecurringRevenue || undefined,
+      arrYear1: deal.arrYear1 || undefined,
+      implementationRevenue: deal.implementationRevenue || undefined,
+      implementationTimeline: deal.implementationTimeline || undefined,
+    }));
+    setDeals(dealsWithChanges);
+    
+    // Extract all changes for the changes feed
+    const allChanges = dealsWithChanges.flatMap(deal => deal.changes || []);
+    setDealChanges(allChanges);
+    
     setIsLoading(false);
   }, []);
 
+  // Helper to record a change
+  const recordChange = (dealId: string, changeType: ChangeType, previousValue?: any, newValue?: any) => {
+    if (!currentUser) return;
+    
+    const change: DealChange = {
+      id: `change-${Date.now()}`,
+      dealId,
+      changeType,
+      previousValue,
+      newValue,
+      timestamp: new Date(),
+      userId: currentUser.id,
+    };
+    
+    // Add to the deal's changes array
+    setDeals(prev => 
+      prev.map(deal => {
+        if (deal.id === dealId) {
+          return {
+            ...deal,
+            changes: [...(deal.changes || []), change],
+          };
+        }
+        return deal;
+      })
+    );
+    
+    // Add to global changes array
+    setDealChanges(prev => [...prev, change]);
+    
+    return change;
+  };
+
   // Add a new deal
-  const addDeal = (dealData: Omit<Deal, 'id' | 'createdAt' | 'updatedAt' | 'stageHistory'>) => {
+  const addDeal = (dealData: Omit<Deal, 'id' | 'createdAt' | 'updatedAt' | 'stageHistory' | 'changes'>) => {
     if (!currentUser) return;
     
     const now = new Date();
@@ -61,11 +113,20 @@ export const DealProvider: React.FC<{ children: React.ReactNode }> = ({ children
       ...dealData,
       id: `deal-${Date.now()}`,
       stageHistory: [{ stage: dealData.stage, timestamp: now }],
+      changes: [],
       createdAt: now,
       updatedAt: now,
     };
 
     setDeals(prev => [...prev, newDeal]);
+    
+    // Record the new deal creation
+    const change = recordChange(newDeal.id, 'deal_added', null, { 
+      clientName: newDeal.clientName,
+      stage: newDeal.stage,
+      dealValue: newDeal.dealValue
+    });
+    
     toast({
       title: "Deal Added",
       description: `${newDeal.clientName} has been added to your pipeline.`,
@@ -74,6 +135,51 @@ export const DealProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Update an existing deal
   const updateDeal = (dealId: string, updates: Partial<Deal>) => {
+    // Find the deal before updating
+    const dealToUpdate = deals.find(d => d.id === dealId);
+    if (!dealToUpdate) return;
+    
+    // Check for specific field updates to track changes
+    if (updates.annualRecurringRevenue !== undefined && 
+        updates.annualRecurringRevenue !== dealToUpdate.annualRecurringRevenue) {
+      recordChange(
+        dealId, 
+        'arr_updated', 
+        dealToUpdate.annualRecurringRevenue, 
+        updates.annualRecurringRevenue
+      );
+    }
+    
+    if (updates.arrYear1 !== undefined && 
+        updates.arrYear1 !== dealToUpdate.arrYear1) {
+      recordChange(
+        dealId, 
+        'arr_year1_updated', 
+        dealToUpdate.arrYear1, 
+        updates.arrYear1
+      );
+    }
+    
+    if (updates.implementationRevenue !== undefined && 
+        updates.implementationRevenue !== dealToUpdate.implementationRevenue) {
+      recordChange(
+        dealId, 
+        'implementation_revenue_updated', 
+        dealToUpdate.implementationRevenue, 
+        updates.implementationRevenue
+      );
+    }
+    
+    if (updates.implementationTimeline !== undefined && 
+        JSON.stringify(updates.implementationTimeline) !== JSON.stringify(dealToUpdate.implementationTimeline)) {
+      recordChange(
+        dealId, 
+        'timeline_updated', 
+        dealToUpdate.implementationTimeline, 
+        updates.implementationTimeline
+      );
+    }
+
     setDeals(prev => 
       prev.map(deal => 
         deal.id === dealId 
@@ -81,6 +187,7 @@ export const DealProvider: React.FC<{ children: React.ReactNode }> = ({ children
           : deal
       )
     );
+    
     toast({
       title: "Deal Updated",
       description: "The deal has been updated successfully.",
@@ -89,10 +196,32 @@ export const DealProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Update a deal's stage and record the timestamp
   const updateDealStage = (dealId: string, newStage: DealStage) => {
+    const dealToUpdate = deals.find(d => d.id === dealId);
+    if (!dealToUpdate) return;
+    
     setDeals(prev => 
       prev.map(deal => {
         if (deal.id === dealId) {
           const now = new Date();
+          
+          // Record the stage change
+          recordChange(
+            dealId, 
+            'stage_changed', 
+            deal.stage, 
+            newStage
+          );
+          
+          // If moving to "Closed Won" or "Closed Lost"
+          if (newStage === 'Closed Won' || newStage === 'Closed Lost') {
+            recordChange(
+              dealId,
+              'deal_closed',
+              deal.stage,
+              newStage
+            );
+          }
+          
           return {
             ...deal,
             stage: newStage,
@@ -103,6 +232,7 @@ export const DealProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return deal;
       })
     );
+    
     toast({
       title: "Deal Stage Updated",
       description: `Deal moved to ${newStage} stage.`,
@@ -270,9 +400,21 @@ export const DealProvider: React.FC<{ children: React.ReactNode }> = ({ children
     );
   };
 
+  // Get changes within a date range
+  const getChangesByDateRange = (startDate: Date, endDate: Date) => {
+    const endOfDay = new Date(endDate);
+    endOfDay.setHours(23, 59, 59, 999);
+    
+    return dealChanges.filter(change => {
+      const changeDate = new Date(change.timestamp);
+      return changeDate >= startDate && changeDate <= endOfDay;
+    }).sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+  };
+
   const value = {
     deals,
     isLoading,
+    dealChanges,
     addDeal,
     updateDeal,
     updateDealStage,
@@ -284,6 +426,7 @@ export const DealProvider: React.FC<{ children: React.ReactNode }> = ({ children
     addContact,
     updateContact,
     deleteContact,
+    getChangesByDateRange,
   };
 
   return <DealContext.Provider value={value}>{children}</DealContext.Provider>;

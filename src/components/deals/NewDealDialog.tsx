@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useDeal } from '@/context/DealContext';
-import { ClientType, DealStage, LeadSource } from '@/types';
+import { ClientType, DealStage, LeadSource, ImplementationTimeline } from '@/types';
 import { 
   Dialog, 
   DialogContent,
@@ -14,6 +14,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
+import { DateRangePicker } from '@/components/ui/date-range-picker';
 import {
   Select,
   SelectContent,
@@ -34,6 +35,9 @@ const NewDealDialog = ({ open, onOpenChange }: NewDealDialogProps) => {
   const initialState = {
     clientName: '',
     dealValue: 0,
+    annualRecurringRevenue: 0,
+    arrYear1: 0,
+    implementationRevenue: 0,
     clientType: 'Commercial' as ClientType,
     leadSource: 'Website' as LeadSource,
     stage: 'Lead Identified' as DealStage,
@@ -41,13 +45,18 @@ const NewDealDialog = ({ open, onOpenChange }: NewDealDialogProps) => {
 
   const [formState, setFormState] = useState(initialState);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     
     setFormState(prev => ({
       ...prev,
-      [name]: name === 'dealValue' ? parseFloat(value) || 0 : value
+      [name]: name === 'dealValue' || name === 'annualRecurringRevenue' || 
+              name === 'arrYear1' || name === 'implementationRevenue' 
+                ? parseFloat(value) || 0 
+                : value
     }));
     
     // Clear error when user types
@@ -85,8 +94,18 @@ const NewDealDialog = ({ open, onOpenChange }: NewDealDialogProps) => {
     
     if (!validateForm() || !currentUser) return;
     
+    // Create optional implementation timeline
+    let implementationTimeline: ImplementationTimeline | undefined = undefined;
+    if (startDate && endDate) {
+      implementationTimeline = {
+        startDate,
+        goLiveDate: endDate
+      };
+    }
+    
     addDeal({
       ...formState,
+      implementationTimeline,
       ownerId: currentUser.id,
       contacts: [],
       notes: [],
@@ -95,6 +114,8 @@ const NewDealDialog = ({ open, onOpenChange }: NewDealDialogProps) => {
     
     // Reset form and close dialog
     setFormState(initialState);
+    setStartDate(undefined);
+    setEndDate(undefined);
     onOpenChange(false);
   };
 
@@ -106,11 +127,13 @@ const NewDealDialog = ({ open, onOpenChange }: NewDealDialogProps) => {
     'RFP/RFI Submitted', 
     'Demo Presented', 
     'Contract Negotiation',
+    'Closed Won',
+    'Closed Lost'
   ];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>Add New Deal</DialogTitle>
           <DialogDescription>
@@ -131,74 +154,130 @@ const NewDealDialog = ({ open, onOpenChange }: NewDealDialogProps) => {
               {errors.clientName && <p className="text-xs text-destructive">{errors.clientName}</p>}
             </div>
             
-            <div className="grid gap-2">
-              <Label htmlFor="dealValue">Deal Value ($)</Label>
-              <Input
-                id="dealValue"
-                name="dealValue"
-                type="number"
-                value={formState.dealValue || ''}
-                onChange={handleChange}
-                className={errors.dealValue ? 'border-destructive' : ''}
-              />
-              {errors.dealValue && <p className="text-xs text-destructive">{errors.dealValue}</p>}
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="dealValue">Deal Value ($)</Label>
+                <Input
+                  id="dealValue"
+                  name="dealValue"
+                  type="number"
+                  value={formState.dealValue || ''}
+                  onChange={handleChange}
+                  className={errors.dealValue ? 'border-destructive' : ''}
+                />
+                {errors.dealValue && <p className="text-xs text-destructive">{errors.dealValue}</p>}
+              </div>
+              
+              <div className="grid gap-2">
+                <Label htmlFor="clientType">Client Type</Label>
+                <Select 
+                  value={formState.clientType} 
+                  onValueChange={handleSelectChange('clientType')}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select client type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {clientTypes.map((type) => (
+                      <SelectItem key={type} value={type}>
+                        {type}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             
-            <div className="grid gap-2">
-              <Label htmlFor="clientType">Client Type</Label>
-              <Select 
-                value={formState.clientType} 
-                onValueChange={handleSelectChange('clientType')}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select client type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {clientTypes.map((type) => (
-                    <SelectItem key={type} value={type}>
-                      {type}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="leadSource">Lead Source</Label>
+                <Select 
+                  value={formState.leadSource} 
+                  onValueChange={handleSelectChange('leadSource')}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select lead source" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {leadSources.map((source) => (
+                      <SelectItem key={source} value={source}>
+                        {source}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="grid gap-2">
+                <Label htmlFor="stage">Initial Stage</Label>
+                <Select 
+                  value={formState.stage} 
+                  onValueChange={handleSelectChange('stage')}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select stage" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {dealStages.map((stage) => (
+                      <SelectItem key={stage} value={stage}>
+                        {stage}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             
-            <div className="grid gap-2">
-              <Label htmlFor="leadSource">Lead Source</Label>
-              <Select 
-                value={formState.leadSource} 
-                onValueChange={handleSelectChange('leadSource')}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select lead source" />
-                </SelectTrigger>
-                <SelectContent>
-                  {leadSources.map((source) => (
-                    <SelectItem key={source} value={source}>
-                      {source}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="grid gap-2">
-              <Label htmlFor="stage">Initial Stage</Label>
-              <Select 
-                value={formState.stage} 
-                onValueChange={handleSelectChange('stage')}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select stage" />
-                </SelectTrigger>
-                <SelectContent>
-                  {dealStages.map((stage) => (
-                    <SelectItem key={stage} value={stage}>
-                      {stage}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="border-t pt-4 mt-2">
+              <h3 className="font-medium mb-4">Financial Details</h3>
+              
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="annualRecurringRevenue">Annual Recurring Revenue (ARR)</Label>
+                  <Input
+                    id="annualRecurringRevenue"
+                    name="annualRecurringRevenue"
+                    type="number"
+                    value={formState.annualRecurringRevenue || ''}
+                    onChange={handleChange}
+                  />
+                </div>
+                
+                <div className="grid gap-2">
+                  <Label htmlFor="arrYear1">ARR Year 1</Label>
+                  <Input
+                    id="arrYear1"
+                    name="arrYear1"
+                    type="number"
+                    value={formState.arrYear1 || ''}
+                    onChange={handleChange}
+                  />
+                </div>
+                
+                <div className="grid gap-2">
+                  <Label htmlFor="implementationRevenue">Implementation Revenue</Label>
+                  <Input
+                    id="implementationRevenue"
+                    name="implementationRevenue"
+                    type="number"
+                    value={formState.implementationRevenue || ''}
+                    onChange={handleChange}
+                  />
+                </div>
+              </div>
+              
+              <div className="mt-4">
+                <Label>Implementation Timeline</Label>
+                <div className="mt-2">
+                  <DateRangePicker
+                    startDate={startDate}
+                    endDate={endDate}
+                    onStartDateChange={setStartDate}
+                    onEndDateChange={setEndDate}
+                    placeholder="Select implementation period"
+                  />
+                </div>
+              </div>
             </div>
           </div>
           <DialogFooter>

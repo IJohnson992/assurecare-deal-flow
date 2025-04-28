@@ -4,6 +4,7 @@ import Layout from '@/components/layout/Layout';
 import DashboardStats from '@/components/dashboard/DashboardStats';
 import PipelineChart from '@/components/dashboard/PipelineChart';
 import ActivityFeed from '@/components/dashboard/ActivityFeed';
+import PipelineChanges from '@/components/dashboard/PipelineChanges';
 import { useIsMobile } from '@/hooks/use-mobile';
 import DealCard from '@/components/deals/DealCard';
 import { mockUsers } from '@/data/mockData';
@@ -52,6 +53,8 @@ const Index = () => {
               <PipelineChart deals={deals} />
               <ActivityFeed deals={deals} />
             </div>
+            
+            <PipelineChanges />
             
             <div className="mt-8">
               <div className="flex justify-between items-center mb-4">

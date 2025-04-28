@@ -49,14 +49,43 @@ export interface Task {
   reminderSent: boolean;
 }
 
+export interface ImplementationTimeline {
+  startDate: Date;
+  goLiveDate: Date;
+}
+
+export type ChangeType = 
+  | 'stage_changed'
+  | 'deal_added'
+  | 'deal_closed'
+  | 'arr_updated'
+  | 'arr_year1_updated'
+  | 'implementation_revenue_updated'
+  | 'timeline_updated';
+
+export interface DealChange {
+  id: string;
+  dealId: string;
+  changeType: ChangeType;
+  previousValue?: any;
+  newValue?: any;
+  timestamp: Date;
+  userId: string;
+}
+
 export interface Deal {
   id: string;
   clientName: string;
   clientType: ClientType;
   dealValue: number;
+  annualRecurringRevenue?: number;
+  arrYear1?: number;
+  implementationRevenue?: number;
+  implementationTimeline?: ImplementationTimeline;
   leadSource: LeadSource;
   stage: DealStage;
   stageHistory: StageTimestamp[];
+  changes: DealChange[];
   ownerId: string;
   contacts: Contact[];
   notes: Note[];
