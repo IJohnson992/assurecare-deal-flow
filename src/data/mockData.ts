@@ -1,4 +1,3 @@
-
 import { 
   User, 
   Deal, 
@@ -7,7 +6,8 @@ import {
   LeadSource, 
   Contact, 
   Note, 
-  Task 
+  Task,
+  DealChange
 } from '@/types';
 
 // Mock Users
@@ -204,6 +204,71 @@ const mockTasks: Task[] = [
   }
 ];
 
+// Mock Deal Changes
+const mockDealChanges: DealChange[] = [
+  {
+    id: 'change-1',
+    dealId: 'deal-1',
+    changeType: 'stage_changed',
+    previousValue: 'Lead Identified',
+    newValue: 'Discovery Call',
+    timestamp: daysAgo(15),
+    userId: 'user-1'
+  },
+  {
+    id: 'change-2',
+    dealId: 'deal-2',
+    changeType: 'stage_changed',
+    previousValue: 'RFP/RFI Submitted',
+    newValue: 'Demo Presented',
+    timestamp: daysAgo(7),
+    userId: 'user-3'
+  },
+  {
+    id: 'change-3',
+    dealId: 'deal-4',
+    changeType: 'stage_changed',
+    previousValue: 'Demo Presented',
+    newValue: 'Contract Negotiation',
+    timestamp: daysAgo(20),
+    userId: 'user-2'
+  },
+  {
+    id: 'change-4',
+    dealId: 'deal-5',
+    changeType: 'deal_closed',
+    previousValue: 'Contract Negotiation',
+    newValue: 'Closed Won',
+    timestamp: daysAgo(15),
+    userId: 'user-2'
+  },
+  {
+    id: 'change-5',
+    dealId: 'deal-6',
+    changeType: 'deal_closed',
+    previousValue: 'Demo Presented',
+    newValue: 'Closed Lost',
+    timestamp: daysAgo(10),
+    userId: 'user-3'
+  },
+  {
+    id: 'change-6',
+    dealId: 'deal-1',
+    changeType: 'deal_added',
+    timestamp: daysAgo(30),
+    userId: 'user-1'
+  },
+  {
+    id: 'change-7',
+    dealId: 'deal-4',
+    changeType: 'arr_updated',
+    previousValue: 280000,
+    newValue: 320000,
+    timestamp: daysAgo(18),
+    userId: 'user-2'
+  }
+];
+
 // Mock Deals
 export const mockDeals: Deal[] = [
   {
@@ -217,6 +282,7 @@ export const mockDeals: Deal[] = [
       { stage: 'Lead Identified' as DealStage, timestamp: daysAgo(30) },
       { stage: 'Discovery Call' as DealStage, timestamp: daysAgo(15) },
     ],
+    changes: mockDealChanges.filter(c => c.dealId === 'deal-1'),
     ownerId: 'user-1',
     contacts: mockContacts.filter(c => c.dealId === 'deal-1'),
     notes: mockNotes.filter(n => n.dealId === 'deal-1'),
@@ -237,6 +303,7 @@ export const mockDeals: Deal[] = [
       { stage: 'RFP/RFI Submitted' as DealStage, timestamp: daysAgo(20) },
       { stage: 'Demo Presented' as DealStage, timestamp: daysAgo(7) },
     ],
+    changes: mockDealChanges.filter(c => c.dealId === 'deal-2'),
     ownerId: 'user-3',
     contacts: mockContacts.filter(c => c.dealId === 'deal-2'),
     notes: mockNotes.filter(n => n.dealId === 'deal-2'),
@@ -256,6 +323,7 @@ export const mockDeals: Deal[] = [
       { stage: 'Discovery Call' as DealStage, timestamp: daysAgo(45) },
       { stage: 'RFP/RFI Submitted' as DealStage, timestamp: daysAgo(5) },
     ],
+    changes: mockDealChanges.filter(c => c.dealId === 'deal-3'),
     ownerId: 'user-1',
     contacts: mockContacts.filter(c => c.dealId === 'deal-3'),
     notes: mockNotes.filter(n => n.dealId === 'deal-3'),
@@ -277,6 +345,7 @@ export const mockDeals: Deal[] = [
       { stage: 'Demo Presented' as DealStage, timestamp: daysAgo(35) },
       { stage: 'Contract Negotiation' as DealStage, timestamp: daysAgo(20) },
     ],
+    changes: mockDealChanges.filter(c => c.dealId === 'deal-4'),
     ownerId: 'user-2',
     contacts: mockContacts.filter(c => c.dealId === 'deal-4'),
     notes: mockNotes.filter(n => n.dealId === 'deal-4'),
@@ -299,6 +368,7 @@ export const mockDeals: Deal[] = [
       { stage: 'Contract Negotiation' as DealStage, timestamp: daysAgo(40) },
       { stage: 'Closed Won' as DealStage, timestamp: daysAgo(15) },
     ],
+    changes: mockDealChanges.filter(c => c.dealId === 'deal-5'),
     ownerId: 'user-2',
     contacts: mockContacts.filter(c => c.dealId === 'deal-5'),
     notes: [],
@@ -320,6 +390,7 @@ export const mockDeals: Deal[] = [
       { stage: 'Demo Presented' as DealStage, timestamp: daysAgo(30) },
       { stage: 'Closed Lost' as DealStage, timestamp: daysAgo(10) },
     ],
+    changes: mockDealChanges.filter(c => c.dealId === 'deal-6'),
     ownerId: 'user-3',
     contacts: [],
     notes: [],

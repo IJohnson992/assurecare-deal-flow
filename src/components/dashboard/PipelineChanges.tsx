@@ -290,151 +290,153 @@ const PipelineChanges = ({}: PipelineChangesProps) => {
         </div>
       </CardHeader>
       <CardContent>
-        <TabsContent value="changes" className="mt-0">
-          <div className="space-y-4">
-            <div className="text-sm text-muted-foreground">
-              Showing changes from {format(startDate, 'MMM d, yyyy')} to {format(endDate, 'MMM d, yyyy')}
+        <Tabs value={activeTab}>
+          <TabsContent value="changes" className="mt-0">
+            <div className="space-y-4">
+              <div className="text-sm text-muted-foreground">
+                Showing changes from {format(startDate, 'MMM d, yyyy')} to {format(endDate, 'MMM d, yyyy')}
+              </div>
+              
+              {filteredChanges.length === 0 ? (
+                <div className="py-8 text-center text-muted-foreground">
+                  No changes found in the selected time period
+                </div>
+              ) : (
+                <div className="space-y-3 max-h-[400px] overflow-y-auto">
+                  {filteredChanges.map((change) => (
+                    <div key={change.id} className="flex items-start gap-3 border-b pb-3">
+                      <div className="mt-0.5">
+                        {getChangeIcon(change.changeType)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm">
+                          {getChangeDescription(change)}
+                        </p>
+                        <div className="flex items-center text-xs text-muted-foreground mt-1">
+                          <Clock className="h-3 w-3 mr-1" />
+                          {format(new Date(change.timestamp), 'MMM d, h:mm a')}
+                        </div>
+                      </div>
+                      {getAmountChange(change) && (
+                        <div className={`text-sm font-medium ${
+                          (change.newValue || 0) > (change.previousValue || 0) 
+                            ? 'text-green-600' 
+                            : 'text-red-600'
+                        }`}>
+                          {getAmountChange(change)}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
-            
-            {filteredChanges.length === 0 ? (
-              <div className="py-8 text-center text-muted-foreground">
-                No changes found in the selected time period
-              </div>
-            ) : (
-              <div className="space-y-3 max-h-[400px] overflow-y-auto">
-                {filteredChanges.map((change) => (
-                  <div key={change.id} className="flex items-start gap-3 border-b pb-3">
-                    <div className="mt-0.5">
-                      {getChangeIcon(change.changeType)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm">
-                        {getChangeDescription(change)}
-                      </p>
-                      <div className="flex items-center text-xs text-muted-foreground mt-1">
-                        <Clock className="h-3 w-3 mr-1" />
-                        {format(new Date(change.timestamp), 'MMM d, h:mm a')}
-                      </div>
-                    </div>
-                    {getAmountChange(change) && (
-                      <div className={`text-sm font-medium ${
-                        (change.newValue || 0) > (change.previousValue || 0) 
-                          ? 'text-green-600' 
-                          : 'text-red-600'
-                      }`}>
-                        {getAmountChange(change)}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </TabsContent>
-        <TabsContent value="summary" className="mt-0">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Card>
-              <CardHeader className="py-4">
-                <CardTitle className="text-base">Deal Progression</CardTitle>
-              </CardHeader>
-              <CardContent className="py-2">
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center">
-                      <ArrowUpRight className="h-4 w-4 text-green-500 mr-2" />
-                      <span className="text-sm">Progressed Deals</span>
-                    </div>
-                    <span className="font-medium">{summaryMetrics.stageProgressed}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center">
-                      <ArrowDownRight className="h-4 w-4 text-red-500 mr-2" />
-                      <span className="text-sm">Regressed Deals</span>
-                    </div>
-                    <span className="font-medium">{summaryMetrics.stageRegressed}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center">
-                      <PlusCircle className="h-4 w-4 text-blue-500 mr-2" />
-                      <span className="text-sm">New Deals</span>
-                    </div>
-                    <span className="font-medium">{summaryMetrics.newDeals}</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader className="py-4">
-                <CardTitle className="text-base">Closed Deals</CardTitle>
-              </CardHeader>
-              <CardContent className="py-2">
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center">
-                      <CheckCircle2 className="h-4 w-4 text-green-500 mr-2" />
-                      <span className="text-sm">Won</span>
-                    </div>
-                    <div>
-                      <span className="font-medium">{summaryMetrics.closedWon}</span>
-                      <span className="text-sm text-muted-foreground ml-2">
-                        ({formatCurrency(summaryMetrics.closedWonValue)})
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center">
-                      <XCircle className="h-4 w-4 text-red-500 mr-2" />
-                      <span className="text-sm">Lost</span>
-                    </div>
-                    <div>
-                      <span className="font-medium">{summaryMetrics.closedLost}</span>
-                      <span className="text-sm text-muted-foreground ml-2">
-                        ({formatCurrency(summaryMetrics.closedLostValue)})
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card className="sm:col-span-2">
-              <CardHeader className="py-4">
-                <CardTitle className="text-base">Revenue Impact</CardTitle>
-              </CardHeader>
-              <CardContent className="py-2">
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm">Net ARR Change</span>
-                    <span className={`font-medium ${
-                      summaryMetrics.netArrChange >= 0 ? 'text-green-600' : 'text-red-600'
-                    }`}>
-                      {formatCurrency(summaryMetrics.netArrChange)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm">Net Implementation Revenue</span>
-                    <span className={`font-medium ${
-                      summaryMetrics.netImplementationChange >= 0 ? 'text-green-600' : 'text-red-600'
-                    }`}>
-                      {formatCurrency(summaryMetrics.netImplementationChange)}
-                    </span>
-                  </div>
-                  <div className="border-t pt-2 mt-2">
+          </TabsContent>
+          <TabsContent value="summary" className="mt-0">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Card>
+                <CardHeader className="py-4">
+                  <CardTitle className="text-base">Deal Progression</CardTitle>
+                </CardHeader>
+                <CardContent className="py-2">
+                  <div className="space-y-2">
                     <div className="flex justify-between items-center">
-                      <span className="text-sm font-medium">Total Net Pipeline Growth</span>
-                      <span className={`font-bold ${
-                        summaryMetrics.totalNetChange >= 0 ? 'text-green-600' : 'text-red-600'
-                      }`}>
-                        {formatCurrency(summaryMetrics.totalNetChange)}
-                      </span>
+                      <div className="flex items-center">
+                        <ArrowUpRight className="h-4 w-4 text-green-500 mr-2" />
+                        <span className="text-sm">Progressed Deals</span>
+                      </div>
+                      <span className="font-medium">{summaryMetrics.stageProgressed}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center">
+                        <ArrowDownRight className="h-4 w-4 text-red-500 mr-2" />
+                        <span className="text-sm">Regressed Deals</span>
+                      </div>
+                      <span className="font-medium">{summaryMetrics.stageRegressed}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center">
+                        <PlusCircle className="h-4 w-4 text-blue-500 mr-2" />
+                        <span className="text-sm">New Deals</span>
+                      </div>
+                      <span className="font-medium">{summaryMetrics.newDeals}</span>
                     </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader className="py-4">
+                  <CardTitle className="text-base">Closed Deals</CardTitle>
+                </CardHeader>
+                <CardContent className="py-2">
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center">
+                        <CheckCircle2 className="h-4 w-4 text-green-500 mr-2" />
+                        <span className="text-sm">Won</span>
+                      </div>
+                      <div>
+                        <span className="font-medium">{summaryMetrics.closedWon}</span>
+                        <span className="text-sm text-muted-foreground ml-2">
+                          ({formatCurrency(summaryMetrics.closedWonValue)})
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center">
+                        <XCircle className="h-4 w-4 text-red-500 mr-2" />
+                        <span className="text-sm">Lost</span>
+                      </div>
+                      <div>
+                        <span className="font-medium">{summaryMetrics.closedLost}</span>
+                        <span className="text-sm text-muted-foreground ml-2">
+                          ({formatCurrency(summaryMetrics.closedLostValue)})
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card className="sm:col-span-2">
+                <CardHeader className="py-4">
+                  <CardTitle className="text-base">Revenue Impact</CardTitle>
+                </CardHeader>
+                <CardContent className="py-2">
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm">Net ARR Change</span>
+                      <span className={`font-medium ${
+                        summaryMetrics.netArrChange >= 0 ? 'text-green-600' : 'text-red-600'
+                      }`}>
+                        {formatCurrency(summaryMetrics.netArrChange)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm">Net Implementation Revenue</span>
+                      <span className={`font-medium ${
+                        summaryMetrics.netImplementationChange >= 0 ? 'text-green-600' : 'text-red-600'
+                      }`}>
+                        {formatCurrency(summaryMetrics.netImplementationChange)}
+                      </span>
+                    </div>
+                    <div className="border-t pt-2 mt-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-medium">Total Net Pipeline Growth</span>
+                        <span className={`font-bold ${
+                          summaryMetrics.totalNetChange >= 0 ? 'text-green-600' : 'text-red-600'
+                        }`}>
+                          {formatCurrency(summaryMetrics.totalNetChange)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+        </Tabs>
       </CardContent>
     </Card>
   );
