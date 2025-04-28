@@ -1,4 +1,3 @@
-
 import { useMemo } from 'react';
 import { Deal, DealStage } from '@/types';
 import { 
@@ -8,7 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
+import { Bar, BarChart, Cell, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
 
 interface PipelineChartProps {
   deals: Deal[];
@@ -31,7 +30,6 @@ const PipelineChart = ({ deals }: PipelineChartProps) => {
     'Closed Lost': '#f43f5e',
   };
   
-  // Prepare data for chart
   const chartData = useMemo(() => {
     const activeStages: DealStage[] = [
       'Lead Identified',
@@ -41,7 +39,6 @@ const PipelineChart = ({ deals }: PipelineChartProps) => {
       'Contract Negotiation',
     ];
     
-    // Group deals by stage and sum value
     return activeStages.map((stage) => {
       const stageDeals = deals.filter((deal) => deal.stage === stage);
       const totalValue = stageDeals.reduce(
@@ -57,7 +54,6 @@ const PipelineChart = ({ deals }: PipelineChartProps) => {
     });
   }, [deals]);
 
-  // Format y-axis ticks as currency
   const formatYAxis = (value: number) => {
     if (value === 0) return '$0';
     if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`;
@@ -65,7 +61,6 @@ const PipelineChart = ({ deals }: PipelineChartProps) => {
     return `$${value}`;
   };
   
-  // Format tooltip values
   const formatTooltipValue = (value: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -123,11 +118,12 @@ const PipelineChart = ({ deals }: PipelineChartProps) => {
                 dataKey="value" 
                 radius={[4, 4, 0, 0]} 
                 barSize={35}
-                fill="#8884d8"
                 name="Value"
-                // Remove dataKeyCircle and use fill prop from data
-                fill={(data) => data.fillColor}
-              />
+              >
+                {chartData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.fillColor} />
+                ))}
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         </div>
