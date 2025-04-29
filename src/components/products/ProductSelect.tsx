@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { Product } from '@/types';
@@ -21,34 +20,71 @@ import {
 } from '@/components/ui/dialog';
 import { useDeal } from '@/context/DealContext';
 
-// Updated interface to match how the component is used in DealPage.tsx
+// Updated interface to match how the component is used in both DealPage.tsx and NewDealDialog.tsx
 interface ProductSelectProps {
   value?: string;
-  dealId: string;
+  dealId?: string;
+  // Support props from NewDealDialog.tsx
+  products?: Product[];
+  selectedProductId?: string;
+  onProductSelect?: (productId: string) => void;
+  onProductAdd?: (productData: Omit<Product, "id">) => void;
 }
 
-const ProductSelect = ({ value, dealId }: ProductSelectProps) => {
-  const { products, addProduct, assignProductToDeal } = useDeal();
+const ProductSelect = ({ 
+  value, 
+  dealId,
+  products: externalProducts,
+  selectedProductId,
+  onProductSelect,
+  onProductAdd
+}: ProductSelectProps) => {
+  const { products: contextProducts, addProduct } = useDeal();
   const [showNewProductDialog, setShowNewProductDialog] = useState(false);
   const [newProduct, setNewProduct] = useState({ name: '', description: '' });
 
+  // Use external products if provided, otherwise use context products
+  const displayProducts = externalProducts || contextProducts;
+
   const handleProductSelect = (productId: string) => {
-    assignProductToDeal(dealId, productId === 'none' ? undefined : productId);
+    if (onProductSelect) {
+      // If external handler provided, use it
+      onProductSelect(productId);
+    } else if (dealId) {
+      // Otherwise use the context method if dealId is available
+      // This is a compatibility check - we'll add this to DealContext.tsx
+      const dealContext = useDeal();
+      if (dealContext && typeof dealContext.assignProductToDeal === 'function') {
+        dealContext.assignProductToDeal(dealId, productId === 'none' ? undefined : productId);
+      }
+    }
   };
 
   const handleAddNewProduct = () => {
     if (newProduct.name.trim()) {
-      const product = addProduct({
+      const productData = {
         name: newProduct.name.trim(),
         description: newProduct.description.trim() || undefined
-      });
+      };
+
+      if (onProductAdd) {
+        // If external handler provided, use it
+        onProductAdd(productData);
+      } else {
+        // Otherwise use the context method
+        const product = addProduct(productData);
+        
+        // Automatically assign the new product to the deal if dealId is available
+        if (product && product.id && dealId) {
+          const dealContext = useDeal();
+          if (dealContext && typeof dealContext.assignProductToDeal === 'function') {
+            dealContext.assignProductToDeal(dealId, product.id);
+          }
+        }
+      }
+      
       setNewProduct({ name: '', description: '' });
       setShowNewProductDialog(false);
-      
-      // Automatically assign the new product to the deal
-      if (product && product.id) {
-        assignProductToDeal(dealId, product.id);
-      }
     }
   };
 
@@ -57,7 +93,7 @@ const ProductSelect = ({ value, dealId }: ProductSelectProps) => {
       <div className="flex items-end gap-2">
         <div className="flex-1">
           <Select 
-            value={value || ''} 
+            value={value || selectedProductId || ''} 
             onValueChange={handleProductSelect}
           >
             <SelectTrigger>
@@ -65,7 +101,7 @@ const ProductSelect = ({ value, dealId }: ProductSelectProps) => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="none">No Product Selected</SelectItem>
-              {products?.map((product) => (
+              {displayProducts?.map((product) => (
                 <SelectItem key={product.id} value={product.id}>
                   {product.name}
                 </SelectItem>

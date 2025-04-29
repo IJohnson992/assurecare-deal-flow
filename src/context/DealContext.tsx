@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Deal, DealStage, Note, Task, Contact, DealChange, ChangeType, Product } from '@/types';
 import { mockDeals, mockProducts } from '@/data/mockData';
@@ -24,6 +23,7 @@ interface DealContextProps {
   getChangesByDateRange: (startDate: Date, endDate: Date) => DealChange[];
   addProduct: (product: Omit<Product, 'id'>) => Product;
   getProductById: (productId: string) => Product | undefined;
+  assignProductToDeal: (dealId: string, productId?: string) => void;
 }
 
 const DealContext = createContext<DealContextProps>({
@@ -45,6 +45,7 @@ const DealContext = createContext<DealContextProps>({
   getChangesByDateRange: () => [],
   addProduct: () => ({ id: '', name: '' }),
   getProductById: () => undefined,
+  assignProductToDeal: () => {},
 });
 
 export const useDeal = () => useContext(DealContext);
@@ -485,6 +486,44 @@ export const DealProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }).sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
   };
 
+  // Add a product to a deal
+  const assignProductToDeal = (dealId: string, productId?: string) => {
+    const product = productId ? getProductById(productId) : undefined;
+    
+    setDeals(prev => 
+      prev.map(deal => {
+        if (deal.id === dealId) {
+          // Record the change
+          recordChange(
+            dealId,
+            'product_added',
+            deal.product,
+            product
+          );
+          
+          return {
+            ...deal,
+            product,
+            updatedAt: new Date(),
+          };
+        }
+        return deal;
+      })
+    );
+    
+    if (product) {
+      toast({
+        title: "Product Assigned",
+        description: `${product.name} has been assigned to the deal.`,
+      });
+    } else {
+      toast({
+        title: "Product Removed",
+        description: "Product has been removed from the deal.",
+      });
+    }
+  };
+
   const value = {
     deals,
     isLoading,
@@ -504,6 +543,7 @@ export const DealProvider: React.FC<{ children: React.ReactNode }> = ({ children
     getChangesByDateRange,
     addProduct,
     getProductById,
+    assignProductToDeal,
   };
 
   return <DealContext.Provider value={value}>{children}</DealContext.Provider>;
