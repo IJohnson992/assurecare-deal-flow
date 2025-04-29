@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -26,12 +25,13 @@ const Sidebar = () => {
   const navItems = [
     { name: 'Dashboard', icon: <Home className="h-5 w-5" />, path: '/' },
     { name: 'Pipeline', icon: <ClipboardList className="h-5 w-5" />, path: '/pipeline' },
+    { name: 'Contacts', icon: <Users className="h-5 w-5" />, path: '/contacts' },
     { name: 'Reports', icon: <BarChart3 className="h-5 w-5" />, path: '/reports' },
-    { name: 'Team', icon: <Users className="h-5 w-5" />, path: '/team' },
     { name: 'Settings', icon: <Settings className="h-5 w-5" />, path: '/settings' },
   ];
 
   return (
+    
     <aside
       className={cn(
         "bg-sidebar flex flex-col text-sidebar-foreground h-screen transition-all duration-300",

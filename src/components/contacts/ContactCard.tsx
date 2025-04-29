@@ -20,6 +20,9 @@ interface ContactCardProps {
 const ContactCard = ({ contact }: ContactCardProps) => {
   const navigate = useNavigate();
   
+  // Get the count of associated deals
+  const dealCount = contact.dealIds ? contact.dealIds.length : 0;
+  
   return (
     <Card className="hover:shadow-md transition-shadow">
       <CardHeader>
@@ -68,7 +71,7 @@ const ContactCard = ({ contact }: ContactCardProps) => {
         
         <div className="flex items-center text-sm text-muted-foreground pt-2">
           <User className="h-4 w-4 mr-2" />
-          <span>{contact.dealIds && contact.dealIds.length ? contact.dealIds.length : 0} associated deals</span>
+          <span>{dealCount} associated deals</span>
         </div>
       </CardContent>
       
