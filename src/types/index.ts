@@ -1,4 +1,3 @@
-
 // User types
 export type UserRole = 'admin' | 'manager' | 'salesperson';
 
@@ -106,14 +105,51 @@ export interface Deal {
   isActive?: boolean;
 }
 
+// Contact types - independent from deal contacts
 export interface Contact {
   id: string;
-  dealId: string;
   name: string;
   title: string;
   email: string;
   phone?: string;
+  company?: string;
+  linkedinUrl?: string;
+  notes?: string;
   isPrimary: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  ownerId: string;
+  dealIds: string[]; // Links to multiple deals
+}
+
+// Activity types
+export type ActivityType = 'call' | 'email' | 'meeting' | 'note' | 'task' | 'stage_change';
+
+export interface Activity {
+  id: string;
+  type: ActivityType;
+  title: string;
+  description?: string;
+  contactId?: string;
+  dealId?: string;
+  companyId?: string;
+  createdAt: Date;
+  createdById: string; // User who created the activity
+}
+
+// Company types
+export interface Company {
+  id: string;
+  name: string;
+  industry?: string;
+  website?: string;
+  employeeCount?: number;
+  description?: string;
+  createdAt: Date;
+  updatedAt: Date;
+  ownerId: string;
+  contactIds: string[]; // Links to multiple contacts
+  dealIds: string[]; // Links to multiple deals
 }
 
 // Report types
