@@ -10,6 +10,7 @@ import { DealProvider } from "@/context/DealContext";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Pipeline from "./pages/Pipeline";
+import DealPage from "./pages/DealPage";
 import Reports from "./pages/Reports";
 import NotFound from "./pages/NotFound";
 
@@ -27,6 +28,7 @@ const App = () => (
               <Route path="/login" element={<Login />} />
               <Route path="/" element={<Index />} />
               <Route path="/pipeline" element={<Pipeline />} />
+              <Route path="/deal/:dealId" element={<DealPage />} />
               <Route path="/reports" element={<Reports />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />

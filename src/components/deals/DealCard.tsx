@@ -1,132 +1,122 @@
 
-import { useState } from 'react';
-import { formatDistanceToNow } from 'date-fns';
-import { Deal } from '@/types';
-import { BadgeCheck, Calendar, Clipboard, Clock, ExternalLink } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { 
-  Card, 
-  CardContent, 
-  CardFooter, 
-  CardHeader, 
-  CardTitle 
-} from '@/components/ui/card';
-import { useToast } from '@/components/ui/use-toast';
+import { format } from 'date-fns';
+import { Link } from 'react-router-dom';
+import { Deal, stageProbability } from '@/types';
 import { formatCurrency } from '@/lib/utils';
-import DealStageDropdown from './DealStageDropdown';
-import { useDeal } from '@/context/DealContext';
-import DealModal from './DealModal';
+import { mockUsers } from '@/data/mockData';
+import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import DealStageProgress from './DealStageProgress';
 
 interface DealCardProps {
   deal: Deal;
 }
 
+// Helper function to get the appropriate color for the stage badge
+const getStageBadgeClass = (stage: string): string => {
+  switch (stage) {
+    case 'Lead Identified':
+      return 'bg-stage-lead text-white';
+    case 'Discovery Call':
+      return 'bg-stage-discovery text-white';
+    case 'RFP/RFI Submitted':
+      return 'bg-stage-rfp text-white';
+    case 'Demo Presented':
+      return 'bg-stage-demo text-white';
+    case 'Contract Negotiation':
+      return 'bg-stage-negotiation text-white';
+    case 'Closed Won':
+      return 'bg-stage-closedwon text-white';
+    case 'Closed Lost':
+      return 'bg-stage-closedlost text-white';
+    default:
+      return 'bg-gray-500 text-white';
+  }
+};
+
 const DealCard = ({ deal }: DealCardProps) => {
-  const { toast } = useToast();
-  const { updateDealStage } = useDeal();
-  const [showDealModal, setShowDealModal] = useState(false);
-
-  const getPrimaryContact = () => {
-    return deal.contacts.find(contact => contact.isPrimary);
-  };
-
-  const primaryContact = getPrimaryContact();
-  const upcomingTasks = deal.tasks.filter(task => !task.completed).length;
-  const latestStageChange = deal.stageHistory[deal.stageHistory.length - 1];
+  // Find the deal owner
+  const owner = mockUsers.find(user => user.id === deal.ownerId);
   
-  const getStageClassName = () => {
-    const stageMap: Record<string, string> = {
-      'Lead Identified': 'stage-lead',
-      'Discovery Call': 'stage-discovery',
-      'RFP/RFI Submitted': 'stage-rfp',
-      'Demo Presented': 'stage-demo',
-      'Contract Negotiation': 'stage-negotiation',
-      'Closed Won': 'stage-closedwon',
-      'Closed Lost': 'stage-closedlost',
-    };
-    
-    return stageMap[deal.stage] || '';
-  };
-
-  const copyDealInfo = () => {
-    const info = `
-Deal: ${deal.clientName}
-Value: ${formatCurrency(deal.dealValue)}
-Stage: ${deal.stage}
-Type: ${deal.clientType}
-${primaryContact ? `Contact: ${primaryContact.name}, ${primaryContact.email}` : ''}
-    `.trim();
-    
-    navigator.clipboard.writeText(info);
-    
-    toast({
-      title: "Copied to clipboard",
-      description: "Deal information has been copied.",
-    });
-  };
+  // Get primary contact if available
+  const primaryContact = deal.contacts.find(contact => contact.isPrimary);
+  
+  // Format the last updated date
+  const updatedDate = format(new Date(deal.updatedAt), 'MMM d, yyyy');
+  
+  // Calculate weighted values based on stage probability
+  const probability = stageProbability[deal.stage] / 100;
+  const weightedValue = deal.dealValue * probability;
+  const weightedARR = (deal.annualRecurringRevenue || 0) * probability;
 
   return (
-    <>
-      <Card className="deal-card">
-        <CardHeader className="pb-2">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-lg font-medium">{deal.clientName}</CardTitle>
-            <div className={`px-2.5 py-1 text-xs rounded-full font-medium ${getStageClassName()}`}>
-              {deal.stage}
-            </div>
+    <Link to={`/deal/${deal.id}`}>
+      <Card className="h-full hover:shadow-md transition-shadow cursor-pointer">
+        <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between">
+          <div>
+            <h3 className="font-semibold text-lg">{deal.clientName}</h3>
+            <p className="text-sm text-muted-foreground">{deal.clientType}</p>
           </div>
-          <div className="text-sm text-muted-foreground">{deal.clientType}</div>
+          <Badge className={getStageBadgeClass(deal.stage)}>
+            {deal.stage}
+          </Badge>
         </CardHeader>
-        <CardContent>
-          <div className="mb-4">
-            <div className="text-xl font-semibold">{formatCurrency(deal.dealValue)}</div>
-            {primaryContact && (
-              <div className="text-sm">
-                {primaryContact.name}, <span className="text-muted-foreground">{primaryContact.title}</span>
-              </div>
-            )}
-          </div>
+        
+        <CardContent className="p-4 pt-2 space-y-4">
+          <DealStageProgress deal={deal} />
           
-          <div className="space-y-2 text-sm">
-            <div className="flex items-center text-muted-foreground">
-              <Clock className="h-3.5 w-3.5 mr-1.5" />
-              <span>
-                In stage for{" "}
-                {formatDistanceToNow(new Date(latestStageChange.timestamp), { addSuffix: false })}
-              </span>
+          <div className="grid grid-cols-2 gap-2 text-sm">
+            <div>
+              <p className="text-muted-foreground">SaaS Value</p>
+              <p className="font-semibold">{formatCurrency(deal.dealValue)}</p>
             </div>
-            
-            {upcomingTasks > 0 && (
-              <div className="flex items-center text-muted-foreground">
-                <Calendar className="h-3.5 w-3.5 mr-1.5" />
-                <span>{upcomingTasks} upcoming {upcomingTasks === 1 ? 'task' : 'tasks'}</span>
-              </div>
-            )}
+            <div>
+              <p className="text-muted-foreground">ARR</p>
+              <p className="font-semibold">
+                {formatCurrency(deal.annualRecurringRevenue || 0)}
+              </p>
+            </div>
           </div>
-        </CardContent>
-        <CardFooter className="flex justify-between pt-2">
-          <DealStageDropdown 
-            currentStage={deal.stage} 
-            onStageChange={(stage) => updateDealStage(deal.id, stage)} 
-          />
           
-          <div className="flex gap-2">
-            <Button variant="ghost" size="sm" onClick={copyDealInfo}>
-              <Clipboard className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => setShowDealModal(true)}>
-              <ExternalLink className="h-4 w-4" />
-            </Button>
+          <div className="grid grid-cols-2 gap-2 text-sm">
+            <div>
+              <p className="text-muted-foreground">Weighted Value</p>
+              <div className="font-semibold flex items-center">
+                {formatCurrency(weightedValue)}
+                <span className="ml-1 text-xs text-muted-foreground">
+                  ({stageProbability[deal.stage]}%)
+                </span>
+              </div>
+            </div>
+            <div>
+              <p className="text-muted-foreground">Weighted ARR</p>
+              <div className="font-semibold flex items-center">
+                {formatCurrency(weightedARR)}
+              </div>
+            </div>
           </div>
+          
+          {primaryContact && (
+            <div className="text-sm">
+              <p className="text-muted-foreground">Primary Contact</p>
+              <p>{primaryContact.name}</p>
+            </div>
+          )}
+        </CardContent>
+        
+        <CardFooter className="p-4 pt-2 flex justify-between items-center text-xs text-muted-foreground">
+          <div className="flex items-center">
+            <Avatar className="h-6 w-6 mr-2">
+              <AvatarImage src={owner?.avatar} alt={owner?.name} />
+              <AvatarFallback>{owner?.name.substring(0, 2) || 'UN'}</AvatarFallback>
+            </Avatar>
+            <span>{owner?.name || 'Unassigned'}</span>
+          </div>
+          <div>Updated {updatedDate}</div>
         </CardFooter>
       </Card>
-
-      <DealModal 
-        deal={deal} 
-        open={showDealModal} 
-        onOpenChange={setShowDealModal} 
-      />
-    </>
+    </Link>
   );
 };
 

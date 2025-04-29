@@ -126,7 +126,7 @@ export interface PipelineMetrics {
   valueByStage: Record<DealStage, number>;
 }
 
-// Stage probability mapping
+// Stage probability mapping - this will eventually be pulled from the database
 export const stageProbability: Record<DealStage, number> = {
   'Lead Identified': 10,
   'Discovery Call': 25,
@@ -136,3 +136,21 @@ export const stageProbability: Record<DealStage, number> = {
   'Closed Won': 100,
   'Closed Lost': 0
 };
+
+// New types for user preferences from Supabase
+export interface UserPreferences {
+  user_id: string;
+  pipeline_view_type: 'card' | 'list';
+  dashboard_value_type: 'total' | 'arr';
+  created_at: Date;
+  updated_at: Date;
+}
+
+// Supabase stage probability type
+export interface StageProbability {
+  id: number;
+  stage: string;
+  probability: number;
+  created_at: Date;
+  updated_at: Date;
+}

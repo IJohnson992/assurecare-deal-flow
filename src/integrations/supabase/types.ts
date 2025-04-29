@@ -9,7 +9,54 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      stage_probabilities: {
+        Row: {
+          created_at: string
+          id: number
+          probability: number
+          stage: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          probability: number
+          stage: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          probability?: number
+          stage?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_preferences: {
+        Row: {
+          created_at: string
+          dashboard_value_type: string
+          pipeline_view_type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          dashboard_value_type?: string
+          pipeline_view_type?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          dashboard_value_type?: string
+          pipeline_view_type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
