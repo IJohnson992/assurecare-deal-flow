@@ -413,11 +413,14 @@ export const DealProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const newContact: Contact = {
       ...contactData,
       id: `contact-${Date.now()}`,
+      dealIds: contactData.dealId ? [contactData.dealId] : [],
+      createdAt: new Date(),
+      updatedAt: new Date(),
     };
 
     setDeals(prev => 
       prev.map(deal => {
-        if (deal.id === contactData.dealId) {
+        if (contactData.dealId && deal.id === contactData.dealId) {
           // If this is marked as primary, make all others non-primary
           const updatedContacts = contactData.isPrimary 
             ? deal.contacts.map(c => ({ ...c, isPrimary: false }))

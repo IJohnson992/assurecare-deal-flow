@@ -1,3 +1,4 @@
+
 // User types
 export type UserRole = 'admin' | 'manager' | 'salesperson';
 
@@ -116,10 +117,12 @@ export interface Contact {
   linkedinUrl?: string;
   notes?: string;
   isPrimary: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-  ownerId: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+  ownerId?: string;
   dealIds: string[]; // Links to multiple deals
+  // Legacy compatibility field - used internally but not exposed in the interface
+  dealId?: string; // For backwards compatibility
 }
 
 // Activity types

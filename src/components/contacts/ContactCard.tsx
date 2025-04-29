@@ -68,7 +68,7 @@ const ContactCard = ({ contact }: ContactCardProps) => {
         
         <div className="flex items-center text-sm text-muted-foreground pt-2">
           <User className="h-4 w-4 mr-2" />
-          <span>{contact.dealIds.length} associated deals</span>
+          <span>{contact.dealIds && contact.dealIds.length ? contact.dealIds.length : 0} associated deals</span>
         </div>
       </CardContent>
       

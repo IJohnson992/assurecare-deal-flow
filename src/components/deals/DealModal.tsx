@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { 
@@ -57,7 +56,7 @@ const DealModal = ({ deal, open, onOpenChange }: DealModalProps) => {
 
   // Contact form state
   const [contactForm, setContactForm] = useState<Omit<ContactType, 'id'>>({
-    dealId: deal.id,
+    dealIds: [deal.id],
     name: '',
     title: '',
     email: '',
@@ -104,12 +103,12 @@ const DealModal = ({ deal, open, onOpenChange }: DealModalProps) => {
     
     addContact({
       ...contactForm,
-      dealId: deal.id,
+      dealId: deal.id, // Still passing dealId for backward compatibility
     });
     
     // Reset form
     setContactForm({
-      dealId: deal.id,
+      dealIds: [deal.id],
       name: '',
       title: '',
       email: '',
