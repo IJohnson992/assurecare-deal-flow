@@ -8,9 +8,10 @@ import { Checkbox } from '@/components/ui/checkbox';
 
 interface DealTaskListProps {
   tasks: Task[];
+  dealId?: string; // Made dealId optional to match usage in DealPage.tsx
 }
 
-const DealTaskList = ({ tasks }: DealTaskListProps) => {
+const DealTaskList = ({ tasks, dealId }: DealTaskListProps) => {
   const { completeTask } = useDeal();
 
   const getAssignedUser = (userId: string) => {

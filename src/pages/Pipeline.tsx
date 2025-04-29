@@ -44,7 +44,8 @@ const Pipeline = () => {
         try {
           const preferences = await getUserPreferences(currentUser.id);
           if (preferences) {
-            setViewType(preferences.pipeline_view_type);
+            // Fix: Parse the string to our typed value
+            setViewType(preferences.pipeline_view_type as 'card' | 'list');
           }
         } catch (error) {
           console.error("Error loading user preferences:", error);

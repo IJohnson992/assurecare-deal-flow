@@ -19,31 +19,36 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
+import { useDeal } from '@/context/DealContext';
 
+// Updated interface to match how the component is used in DealPage.tsx
 interface ProductSelectProps {
-  products: Product[];
-  selectedProductId: string | undefined;
-  onProductSelect: (productId: string | undefined) => void;
-  onProductAdd: (product: Omit<Product, 'id'>) => void;
+  value?: string;
+  dealId: string;
 }
 
-const ProductSelect = ({ 
-  products, 
-  selectedProductId, 
-  onProductSelect, 
-  onProductAdd 
-}: ProductSelectProps) => {
+const ProductSelect = ({ value, dealId }: ProductSelectProps) => {
+  const { products, addProduct, assignProductToDeal } = useDeal();
   const [showNewProductDialog, setShowNewProductDialog] = useState(false);
   const [newProduct, setNewProduct] = useState({ name: '', description: '' });
 
+  const handleProductSelect = (productId: string) => {
+    assignProductToDeal(dealId, productId === 'none' ? undefined : productId);
+  };
+
   const handleAddNewProduct = () => {
     if (newProduct.name.trim()) {
-      onProductAdd({
+      const product = addProduct({
         name: newProduct.name.trim(),
         description: newProduct.description.trim() || undefined
       });
       setNewProduct({ name: '', description: '' });
       setShowNewProductDialog(false);
+      
+      // Automatically assign the new product to the deal
+      if (product && product.id) {
+        assignProductToDeal(dealId, product.id);
+      }
     }
   };
 
@@ -52,15 +57,15 @@ const ProductSelect = ({
       <div className="flex items-end gap-2">
         <div className="flex-1">
           <Select 
-            value={selectedProductId || ''} 
-            onValueChange={(value) => onProductSelect(value || undefined)}
+            value={value || ''} 
+            onValueChange={handleProductSelect}
           >
             <SelectTrigger>
               <SelectValue placeholder="Select a product" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="none">No Product Selected</SelectItem>
-              {products.map((product) => (
+              {products?.map((product) => (
                 <SelectItem key={product.id} value={product.id}>
                   {product.name}
                 </SelectItem>

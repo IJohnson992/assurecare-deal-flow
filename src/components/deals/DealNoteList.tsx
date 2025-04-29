@@ -5,9 +5,10 @@ import { mockUsers } from '@/data/mockData';
 
 interface DealNoteListProps {
   notes: Note[];
+  dealId?: string; // Made dealId optional to match usage in DealPage.tsx
 }
 
-const DealNoteList = ({ notes }: DealNoteListProps) => {
+const DealNoteList = ({ notes, dealId }: DealNoteListProps) => {
   const getUser = (userId: string) => {
     return mockUsers.find(user => user.id === userId);
   };

@@ -6,9 +6,10 @@ import { Mail, Phone, Star, Trash } from 'lucide-react';
 
 interface DealContactListProps {
   contacts: Contact[];
+  dealId?: string; // Made dealId optional to match usage in DealPage.tsx
 }
 
-const DealContactList = ({ contacts }: DealContactListProps) => {
+const DealContactList = ({ contacts, dealId }: DealContactListProps) => {
   const { updateContact, deleteContact } = useDeal();
 
   const handleSetPrimary = (contactId: string) => {

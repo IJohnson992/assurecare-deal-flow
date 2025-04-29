@@ -34,7 +34,8 @@ interface PipelineTableProps {
   deals: Deal[];
 }
 
-const stageBadgeVariant = (stage: DealStage): "default" | "outline" | "secondary" | "destructive" | "success" => {
+// Update the return type to only include valid badge variants
+const stageBadgeVariant = (stage: DealStage): "default" | "outline" | "secondary" | "destructive" => {
   switch (stage) {
     case 'Lead Identified':
       return 'outline';
@@ -47,7 +48,7 @@ const stageBadgeVariant = (stage: DealStage): "default" | "outline" | "secondary
     case 'Contract Negotiation':
       return 'secondary';
     case 'Closed Won':
-      return 'success';
+      return 'default'; // Changed from 'success' to 'default' to match available variants
     case 'Closed Lost':
       return 'destructive';
     default:

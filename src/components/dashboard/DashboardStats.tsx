@@ -36,7 +36,8 @@ const DashboardStats = ({ deals }: DashboardStatsProps) => {
         try {
           const preferences = await getUserPreferences(currentUser.id);
           if (preferences) {
-            setValueType(preferences.dashboard_value_type);
+            // Fix: Parse the string to our typed value
+            setValueType(preferences.dashboard_value_type as 'total' | 'arr');
           }
         } catch (error) {
           console.error("Error loading user preferences:", error);
