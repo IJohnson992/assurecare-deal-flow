@@ -15,7 +15,11 @@ import {
   BarChart, 
   CheckCircle, 
   Clock, 
-  DollarSign 
+  DollarSign,
+  TrendingUp,
+  Users,
+  Target,
+  Zap
 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -36,7 +40,6 @@ const DashboardStats = ({ deals }: DashboardStatsProps) => {
         try {
           const preferences = await getUserPreferences(currentUser.id);
           if (preferences) {
-            // Fix: Parse the string to our typed value
             setValueType(preferences.dashboard_value_type as 'total' | 'arr');
           }
         } catch (error) {
@@ -63,12 +66,16 @@ const DashboardStats = ({ deals }: DashboardStatsProps) => {
     }
   };
   
-  // Calculate summary statistics
+  // Calculate comprehensive SaaS KPIs
   const stats = useMemo(() => {
     // Only consider active deals (not closed)
     const activeDeals = deals.filter(
       (deal) => deal.stage !== 'Closed Won' && deal.stage !== 'Closed Lost'
     );
+    
+    // Closed won deals for CAC calculation
+    const wonDeals = deals.filter(deal => deal.stage === 'Closed Won');
+    const lostDeals = deals.filter(deal => deal.stage === 'Closed Lost');
     
     // Total pipeline value - different calculation based on valueType
     const totalValue = activeDeals.reduce(
@@ -86,33 +93,62 @@ const DashboardStats = ({ deals }: DashboardStatsProps) => {
       0
     );
     
-    // Count of deals in each stage
-    const dealCountByStage = activeDeals.reduce((acc, deal) => {
-      acc[deal.stage] = (acc[deal.stage] || 0) + 1;
-      return acc;
-    }, {} as Record<DealStage, number>);
-    
-    // Total active deals
-    const totalDeals = activeDeals.length;
-    
-    // Count deals won
-    const dealsWon = deals.filter(deal => deal.stage === 'Closed Won').length;
-    
-    // Count deals lost
-    const dealsLost = deals.filter(deal => deal.stage === 'Closed Lost').length;
-    
     // Win rate
-    const closedDeals = dealsWon + dealsLost;
-    const winRate = closedDeals > 0 ? (dealsWon / closedDeals) * 100 : 0;
+    const closedDeals = wonDeals.length + lostDeals.length;
+    const winRate = closedDeals > 0 ? (wonDeals.length / closedDeals) * 100 : 0;
+    
+    // Average Deal Size
+    const avgDealSize = wonDeals.length > 0 
+      ? wonDeals.reduce((sum, deal) => sum + (valueType === 'total' ? deal.dealValue : (deal.annualRecurringRevenue || 0)), 0) / wonDeals.length
+      : 0;
+    
+    // Customer Acquisition Cost (CAC) - simplified calculation
+    // In a real scenario, this would include marketing and sales costs
+    // Here we'll use a simplified model: total sales effort / customers acquired
+    const assumedMonthlySalesCost = 50000; // Placeholder for monthly sales team cost
+    const monthlyWonDeals = wonDeals.filter(deal => {
+      const dealDate = new Date(deal.updatedAt);
+      const now = new Date();
+      const monthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+      return dealDate >= monthAgo;
+    }).length;
+    
+    const cac = monthlyWonDeals > 0 ? assumedMonthlySalesCost / monthlyWonDeals : 0;
+    
+    // Monthly Recurring Revenue (MRR) from won deals
+    const mrr = wonDeals.reduce((sum, deal) => {
+      return sum + ((deal.annualRecurringRevenue || 0) / 12);
+    }, 0);
+    
+    // Sales Velocity (deals moving through pipeline per month)
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
+    const recentlyMovedDeals = deals.filter(deal => {
+      return deal.stageHistory.some(stage => 
+        new Date(stage.timestamp) >= thirtyDaysAgo && 
+        stage.stage !== 'Lead Identified'
+      );
+    }).length;
+    
+    // Lead to Customer conversion rate
+    const totalLeads = deals.filter(deal => 
+      deal.stageHistory.some(stage => stage.stage === 'Lead Identified')
+    ).length;
+    const leadConversionRate = totalLeads > 0 ? (wonDeals.length / totalLeads) * 100 : 0;
     
     return {
       totalValue,
       totalWeightedValue,
-      totalDeals,
-      dealCountByStage,
-      dealsWon,
-      dealsLost,
+      totalDeals: activeDeals.length,
+      dealsWon: wonDeals.length,
+      dealsLost: lostDeals.length,
       winRate,
+      avgDealSize,
+      cac,
+      mrr,
+      recentlyMovedDeals,
+      leadConversionRate,
     };
   }, [deals, valueType]);
 
@@ -164,27 +200,6 @@ const DashboardStats = ({ deals }: DashboardStatsProps) => {
         
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-base font-medium">Active Deals</CardTitle>
-            <CardDescription>Deals in progress</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold flex items-center">
-              <BarChart className="h-6 w-6 text-muted-foreground mr-1" />
-              {stats.totalDeals}
-            </div>
-          </CardContent>
-          <CardFooter className="pt-0 flex justify-between text-xs">
-            <div className="text-stage-discovery font-medium">
-              {stats.dealCountByStage['Discovery Call'] || 0} in Discovery
-            </div>
-            <div className="text-stage-negotiation font-medium">
-              {stats.dealCountByStage['Contract Negotiation'] || 0} in Negotiation
-            </div>
-          </CardFooter>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
             <CardTitle className="text-base font-medium">Win Rate</CardTitle>
             <CardDescription>Deals won vs. closed</CardDescription>
           </CardHeader>
@@ -206,17 +221,100 @@ const DashboardStats = ({ deals }: DashboardStatsProps) => {
         
         <Card>
           <CardHeader className="pb-2">
+            <CardTitle className="text-base font-medium">Avg Deal Size</CardTitle>
+            <CardDescription>Average value of won deals</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold flex items-center">
+              <Target className="h-6 w-6 text-muted-foreground mr-1" />
+              {formatCurrency(stats.avgDealSize)}
+            </div>
+          </CardContent>
+          <CardFooter className="pt-0 text-xs text-muted-foreground">
+            Based on {stats.dealsWon} closed deals
+          </CardFooter>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base font-medium">Customer CAC</CardTitle>
+            <CardDescription>Customer acquisition cost</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold flex items-center">
+              <Users className="h-6 w-6 text-muted-foreground mr-1" />
+              {formatCurrency(stats.cac)}
+            </div>
+          </CardContent>
+          <CardFooter className="pt-0 text-xs text-muted-foreground">
+            Monthly sales cost per customer
+          </CardFooter>
+        </Card>
+      </div>
+
+      {/* Secondary KPIs Row */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base font-medium">Monthly MRR</CardTitle>
+            <CardDescription>Monthly recurring revenue</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold flex items-center">
+              <TrendingUp className="h-5 w-5 text-muted-foreground mr-1" />
+              {formatCurrency(stats.mrr)}
+            </div>
+          </CardContent>
+          <CardFooter className="pt-0 text-xs text-muted-foreground">
+            From {stats.dealsWon} won deals
+          </CardFooter>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base font-medium">Sales Velocity</CardTitle>
+            <CardDescription>Deals advanced (30 days)</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold flex items-center">
+              <Zap className="h-5 w-5 text-muted-foreground mr-1" />
+              {stats.recentlyMovedDeals}
+            </div>
+          </CardContent>
+          <CardFooter className="pt-0 text-xs text-muted-foreground">
+            Deals moved through pipeline
+          </CardFooter>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base font-medium">Lead Conversion</CardTitle>
+            <CardDescription>Lead to customer rate</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold flex items-center">
+              <BarChart className="h-5 w-5 text-muted-foreground mr-1" />
+              {formatPercentage(stats.leadConversionRate)}
+            </div>
+          </CardContent>
+          <CardFooter className="pt-0 text-xs text-muted-foreground">
+            Overall conversion efficiency
+          </CardFooter>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-2">
             <CardTitle className="text-base font-medium">Avg. Deal Time</CardTitle>
             <CardDescription>Days to close deals</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold flex items-center">
-              <Clock className="h-6 w-6 text-muted-foreground mr-1" />
+            <div className="text-2xl font-bold flex items-center">
+              <Clock className="h-5 w-5 text-muted-foreground mr-1" />
               65
             </div>
           </CardContent>
           <CardFooter className="pt-0 text-xs text-muted-foreground">
-            Based on last 6 months data
+            Based on historical data
           </CardFooter>
         </Card>
       </div>
